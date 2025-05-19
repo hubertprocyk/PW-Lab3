@@ -6,7 +6,7 @@ using PW_Lab3.Models;
 using Avalonia.Controls;
 using PW_Lab3.Views;
 using System.IO;
-using System.Linq;
+using System.Xml.Serialization;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 
@@ -59,26 +59,22 @@ public class MainWindowViewModel : ViewModelBase {
 
             var dialog = new OpenFileDialog
             {
-                Filters = { new FileDialogFilter { Name = "CSV", Extensions = { "csv" } } },
+                Filters = { new FileDialogFilter { Name = "XML", Extensions = { "xml" } } },
                 AllowMultiple = false
             };
 
             var result = await dialog.ShowAsync(mainWindow);
             if (result is { Length: > 0 })
             {
-                var lines = File.ReadAllLines(result[0]);
-                foreach (var line in lines)
+                var serializer = new XmlSerializer(typeof(ObservableCollection<Pracownik>));
+                await using var stream = new FileStream(result[0], FileMode.Open);
+                if (serializer.Deserialize(stream) is ObservableCollection<Pracownik> nowiPracownicy)
                 {
-                    var dane = line.Split(',');
-                    if (dane.Length != 4) continue;
-
-                    Pracownicy.Add(new Pracownik
+                    Pracownicy.Clear();
+                    foreach (var pracownik in nowiPracownicy)
                     {
-                        Imie = dane[0],
-                        Nazwisko = dane[1],
-                        Wiek = int.TryParse(dane[2], out var wiek) ? wiek : 0,
-                        Stanowisko = dane[3]
-                    });
+                        Pracownicy.Add(pracownik);
+                    }
                 }
             }
         });
@@ -90,16 +86,17 @@ public class MainWindowViewModel : ViewModelBase {
 
             var dialog = new SaveFileDialog
             {
-                Filters = { new FileDialogFilter { Name = "CSV", Extensions = { "csv" } } },
-                DefaultExtension = "csv",
-                InitialFileName = "pracownicy.csv"
+                Filters = { new FileDialogFilter { Name = "XML", Extensions = { "xml" } } },
+                DefaultExtension = "xml",
+                InitialFileName = "pracownicy.xml"
             };
 
             var result = await dialog.ShowAsync(mainWindow);
             if (!string.IsNullOrEmpty(result))
             {
-                var lines = Pracownicy.Select(p => $"{p.Imie},{p.Nazwisko},{p.Wiek},{p.Stanowisko}");
-                File.WriteAllLines(result, lines);
+                var serializer = new XmlSerializer(typeof(ObservableCollection<Pracownik>));
+                await using var stream = new FileStream(result, FileMode.Create);
+                serializer.Serialize(stream, Pracownicy);
             }
         });
     }
