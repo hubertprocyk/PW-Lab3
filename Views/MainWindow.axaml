@@ -17,12 +17,12 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <StackPanel Margin="20" Spacing="10">
-        <StackPanel Orientation="Horizontal" Spacing="10">
+    <StackPanel Margin="15" Spacing="10">
+        <StackPanel Orientation="Horizontal" Spacing="5">
             <Button Content="Dodaj" Command="{Binding DodajCommand}" />
             <Button Content="Usuń" Command="{Binding UsunCommand}" />
-            <Button Content="Zapis do .csv" Command="{Binding EksportujCommand}" />
-            <Button Content="Odczyt z .csv" Command="{Binding ImportujCommand}" />
+            <Button Content="Zapisz do .csv" Command="{Binding EksportujCommand}" />
+            <Button Content="Wczytaj z .csv" Command="{Binding ImportujCommand}" />
         </StackPanel>
         <DataGrid ItemsSource="{Binding Pracownicy}" SelectedItem="{Binding WybranyPracownik}" AutoGenerateColumns="False" Height="200">
             <DataGrid.Columns>
