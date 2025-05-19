@@ -6,7 +6,7 @@ using PW_Lab3.Models;
 using Avalonia.Controls;
 using PW_Lab3.Views;
 using System.IO;
-using System.Linq;
+using System.Text.Json;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 
@@ -59,26 +59,23 @@ public class MainWindowViewModel : ViewModelBase {
 
             var dialog = new OpenFileDialog
             {
-                Filters = { new FileDialogFilter { Name = "CSV", Extensions = { "csv" } } },
+                Filters = { new FileDialogFilter { Name = "JSON", Extensions = { "json" } } }, 
                 AllowMultiple = false
             };
 
             var result = await dialog.ShowAsync(mainWindow);
             if (result is { Length: > 0 })
             {
-                var lines = File.ReadAllLines(result[0]);
-                foreach (var line in lines)
+                var json = File.ReadAllText(result[0]);
+                var pracownicy = JsonSerializer.Deserialize<ObservableCollection<Pracownik>>(json);
+            
+                if (pracownicy != null)
                 {
-                    var dane = line.Split(',');
-                    if (dane.Length != 4) continue;
-
-                    Pracownicy.Add(new Pracownik
+                    Pracownicy.Clear();
+                    foreach (var pracownik in pracownicy)
                     {
-                        Imie = dane[0],
-                        Nazwisko = dane[1],
-                        Wiek = int.TryParse(dane[2], out var wiek) ? wiek : 0,
-                        Stanowisko = dane[3]
-                    });
+                        Pracownicy.Add(pracownik);
+                    }
                 }
             }
         });
@@ -90,16 +87,21 @@ public class MainWindowViewModel : ViewModelBase {
 
             var dialog = new SaveFileDialog
             {
-                Filters = { new FileDialogFilter { Name = "CSV", Extensions = { "csv" } } },
-                DefaultExtension = "csv",
-                InitialFileName = "pracownicy.csv"
+                Filters = { new FileDialogFilter { Name = "JSON", Extensions = { "json" } } }, 
+                DefaultExtension = "json",
+                InitialFileName = "pracownicy.json"
             };
 
             var result = await dialog.ShowAsync(mainWindow);
             if (!string.IsNullOrEmpty(result))
             {
-                var lines = Pracownicy.Select(p => $"{p.Imie},{p.Nazwisko},{p.Wiek},{p.Stanowisko}");
-                File.WriteAllLines(result, lines);
+                var options = new JsonSerializerOptions 
+                {
+                    WriteIndented = true,
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                };
+                var json = JsonSerializer.Serialize(Pracownicy, options);
+                File.WriteAllText(result, json);
             }
         });
     }
